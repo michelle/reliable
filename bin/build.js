@@ -40,6 +40,7 @@ var starttagIF = '// if node'
 var base = [
     '../deps/js-binarypack/lib/bufferbuilder.js'
   , '../deps/js-binarypack/lib/binarypack.js'
+  , 'util.js'
   , 'reliable.js'
 
 ];

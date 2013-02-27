@@ -1,0 +1,8 @@
+{
+  "name": "reliable",
+  "version": "0.1.0",
+  "description": "Reliable DataChannels.",
+  "devDependencies": {
+    "uglify-js": "~1.3.4"
+  }
+}
