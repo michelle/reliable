@@ -8,13 +8,6 @@
 * `.onmessage(msg)`: Called when data is received.
 
 
-## Internal Stuff
-
-* `_chunk(bl)`: Takes in a `Blob` and spits out reasonably sized chunks.
-* `_ack(num)`: Send an ack for the next message expected.
-* `_complete(message_id)`: Puts together a message from chunks and emits.
-* Default window size of 5.
-
 ## Message format
 
 ### ACK
