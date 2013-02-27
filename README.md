@@ -21,40 +21,47 @@
 
 This is an ACK for a chunk of the message.
 
+```
   [
     /* type */  'ack',
     /* id */    message_id,
     /* ACK */   n   // The next chunk # expected.
   ]
-
+```
 
 ### Chunk
 
 This is a chunk of the message.
 
+```
   [
     /* type */  'chunk',
     /* id */    message_id,
     /* n */     n.       // The chunk #.
     /* chunk */ chunk   // The actual binary chunk.
   ]
+```
 
 
 ### END
 
 This is the end of a message.
 
+```
   [
     /* type */  'end',
     /* id */    message_id
   ]
+```
 
 
 ### Unchunked message
 
 This is a message that was able to be sent without being chunked.
 
+```
   [
     /* type */  'no',
     /* msg */   payload
   ]
+```
