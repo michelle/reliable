@@ -771,7 +771,7 @@ Reliable.prototype._handleMessage = function(msg) {
       // What if 'end' is sent out of order? Eventually we will ACK for
       // and receive it, so shouldn't be a problem.
       data = idata;
-      if (!!data) {
+      if (!!data && data.ack === msg[2]) {
         this._complete(id);
         data.ack += 1;
         this._ack(id, data.ack);
