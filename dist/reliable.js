@@ -671,7 +671,7 @@ function Reliable(dc) {
   // MTU.
   this._mtu = 800;
   // Interval for setTimeout. In ms.
-  this._interval = 100;
+  this._interval = 1000;
 
   // Messages sent.
   this._count = 0;
@@ -710,6 +710,7 @@ Reliable.prototype._setupInterval = function() {
   var self = this;
   this._timeout = setInterval(function() {
     var message = self._queue.shift();
+    console.log('Sending...', message);
     self._dc.send(message);
     if (self._queue.length === 0) {
       clearTimeout(self._timeout);
@@ -721,7 +722,6 @@ Reliable.prototype._setupInterval = function() {
 // Handle sending a message.
 // FIXME: Don't wait for interval time for all messages...
 Reliable.prototype._handleSend = function(msg) {
-  util.log('handleSend: ', msg);
   // FIXME: String stuff...
   var self = this;
   msg = util.pack(msg);
@@ -812,7 +812,7 @@ Reliable.prototype._handleMessage = function(msg) {
 
       var n = msg[2];
       var chunk = msg[3];
-      data.chunks.push(chunk);
+      data.chunks[n] = chunk;
 
       // If we get the chunk we're looking for, ACK for next missing.
       // Otherwise, ACK the same N again.
@@ -834,13 +834,15 @@ Reliable.prototype._chunk = function(bl) {
   // FIXME: large as possible chunking.
   var chunks = [];
   var size = bl.size;
-  for (var start = 0; start < size; start += this._mtu) {
+  var start = 0;
+  while (start < size) {
     var end = Math.min(size, start + this._mtu);
     var b = bl.slice(start, end);
     var chunk = {
       payload: b
     }
     chunks.push(chunk);
+    start = end;
   }
   return chunks;
 };
