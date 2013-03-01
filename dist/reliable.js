@@ -657,17 +657,21 @@ function Reliable(dc) {
   if (!(this instanceof Reliable)) return new Reliable(dc);
   this._dc = dc;
 
+  // FIXME: make this an option.
+  util.debug = true;
+
   // Messages sent/received so far.
   // id: { (ack: n|n: index), chunks: [...] }
   this._outgoing = {};
   this._incoming = {};
+  this._received = {};
 
   // Window size.
   this._window = 5;
   // MTU.
   this._mtu = 800;
   // Interval for setTimeout. In ms.
-  this._interval = 10;
+  this._interval = 100;
 
   // Messages sent.
   this._count = 0;
@@ -705,11 +709,11 @@ Reliable.prototype.onmessage = function(msg) {};
 Reliable.prototype._setupInterval = function() {
   var self = this;
   this._timeout = setInterval(function() {
-    var message = self._queue.pop();
+    var message = self._queue.shift();
     self._dc.send(message);
     if (self._queue.length === 0) {
       clearTimeout(self._timeout);
-      this._timeout = null;
+      self._timeout = null;
     }
   }, this._interval);
 };
@@ -717,6 +721,7 @@ Reliable.prototype._setupInterval = function() {
 // Handle sending a message.
 // FIXME: Don't wait for interval time for all messages...
 Reliable.prototype._handleSend = function(msg) {
+  util.log('handleSend: ', msg);
   // FIXME: String stuff...
   var self = this;
   msg = util.pack(msg);
@@ -747,6 +752,7 @@ Reliable.prototype._setupDC = function() {
 
 // Handles an incoming message.
 Reliable.prototype._handleMessage = function(msg) {
+  util.log('handleMessage: ', msg);
   var id = msg[1];
   var idata = this._incoming[id];
   var odata = this._outgoing[id];
@@ -780,7 +786,6 @@ Reliable.prototype._handleMessage = function(msg) {
         // Take the larger ACK, for out of order messages.
         data.ack = Math.max(ack, data.ack);
         data.n = data.ack;
-        data.chunks[data.n].sent = false;
         this._sendWindowedChunks(id);
 
         // Clean up when all chunks are ACKed.
@@ -805,14 +810,9 @@ Reliable.prototype._handleMessage = function(msg) {
         this._incoming[id] = data;
       }
 
-      // Make sure this message is supposed to be incoming.
-      if (data.n === undefined) {
-        break;
-      }
-
-      var n = chunk[2];
-      var chunk = chunk[3];
-      data[chunks].push(chunk);
+      var n = msg[2];
+      var chunk = msg[3];
+      data.chunks.push(chunk);
 
       // If we get the chunk we're looking for, ACK for next missing.
       // Otherwise, ACK the same N again.
@@ -841,7 +841,6 @@ Reliable.prototype._chunk = function(bl) {
       payload: b
     }
     chunks.push(chunk);
-    start = end;
   }
   return chunks;
 };
@@ -872,12 +871,13 @@ Reliable.prototype._calculateNextAck = function(id) {
 
 // Sends the next window of chunks.
 Reliable.prototype._sendWindowedChunks = function(id) {
+  util.log('sendWindowedChunks for: ', id);
   var data = this._outgoing[id];
   var ch = data.chunks;
   var limit = Math.min(data.ack + this._window, ch.length);
   var timeout = 0;
   for (var i = data.n; i < limit; i += 1) {
-    if (!ch[i].sent) {
+    if (!ch[i].sent || i === data.n) {
       ch[i].sent = true;
       // TODO: set timer.
       this._sendChunk(id, i, ch[i].payload);
@@ -891,11 +891,13 @@ Reliable.prototype._sendWindowedChunks = function(id) {
 
 // Sends one chunk.
 Reliable.prototype._sendChunk = function(id, n, payload) {
+  util.log('sendChunk', payload);
   this._handleSend(['chunk', id, n, payload]);
 };
 
 // Puts together a message from chunks.
 Reliable.prototype._complete = function(id) {
+  util.log('complete', id);
   // FIXME: handle errors.
   var self = this;
   var chunks = this._incoming[id].chunks;
