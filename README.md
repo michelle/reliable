@@ -4,7 +4,7 @@
 ## Reliable
 
 `new Reliable(dc)`: A reliable utility class for DataChannel. Takes in a `DataChannel` object.
-* `.send(msg)`: Takes a `Blob` and sends it reliably.
+* `.send(msg)`: Takes any message and sends it reliably.
 * `.onmessage(msg)`: Called when data is received.
 
 
