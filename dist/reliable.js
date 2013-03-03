@@ -653,12 +653,11 @@ var util = {
  * Reliable transfer for Chrome Canary DataChannel impl.
  * Author: @michellebu
  */
-function Reliable(dc) {
+function Reliable(dc, debug) {
   if (!(this instanceof Reliable)) return new Reliable(dc);
   this._dc = dc;
 
-  // FIXME: make this an option.
-  util.debug = true;
+  util.debug = debug;
 
   // Messages sent/received so far.
   // id: { ack: n, chunks: [...] }
@@ -865,7 +864,6 @@ Reliable.prototype._handleMessage = function(msg) {
 
 // Chunks BL into smaller messages.
 Reliable.prototype._chunk = function(bl) {
-  // FIXME: large as possible chunking.
   var chunks = [];
   var size = bl.size;
   var start = 0;
