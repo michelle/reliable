@@ -663,8 +663,7 @@ function Reliable(dc) {
   // Messages sent/received so far.
   // id: { ack: n, chunks: [...] }
   this._outgoing = {};
-  // The timeout is for sending the last ACK again.
-  // id: { ack: ['ack', id, n], timeout: id, chunks: [...] }
+  // id: { ack: ['ack', id, n], chunks: [...] }
   this._incoming = {};
   this._received = {};
 
@@ -674,8 +673,25 @@ function Reliable(dc) {
   this._mtu = 500;
   // Interval for setInterval. In ms.
   this._interval = 30;
-  // Timeout for resending ACKS. In ms.
-  this._ackTimeout = 500;
+  /**
+   * TIMES for 5KB:
+   * Time - wi | mtu | interval
+   * 4441 - 20 | 500 | 50
+   * 4317 - 100| 600 | 20
+   * 4158 - 50 | 600 | 100
+   * 4151 - 20 | 500 | 30
+   * 4086 - 20 | 600 | 20
+   * 4080 - 50 | 600 | 20
+   * 4049 - 50 | 600 | 10
+   * 3561 - 50 | 600 | 50
+   * 2198 - 20 | 800 | 50 - Breaks for bigger files.
+   *              800 MTU seems to throttle even at 200ms for larger files
+   *
+   * TIMES for 23KB:
+   * 38421 - 20 | 600 | 50
+   * 29904 - 20 | 500 | 30
+   * 37906 - 50 | 500 | 30
+   */
 
   // Messages sent.
   this._count = 0;
@@ -699,6 +715,10 @@ Reliable.prototype.send = function(msg) {
     ack: 0,
     chunks: this._chunk(bl)
   };
+
+  if (util.debug) {
+    this._outgoing[this._count].timer = new Date();
+  }
 
   // Send prelim window.
   this._sendWindowedChunks(this._count);
@@ -786,9 +806,10 @@ Reliable.prototype._handleMessage = function(msg) {
       // and receive it, so shouldn't be a problem.
       data = idata;
       if (!!data && data.ack[2] === msg[2]) {
-        //this._ack(id, data.ack);
         this._complete(id);
         this._received[id] = true;
+      } else {
+        this._ack(id, data.ack);
       }
       break;
     case 'ack':
@@ -802,6 +823,7 @@ Reliable.prototype._handleMessage = function(msg) {
 
         // Clean up when all chunks are ACKed.
         if (data.ack >= data.chunks.length) {
+          util.log('Time: ', new Date() - data.timer);
           delete this._outgoing[id];
         }
       }
