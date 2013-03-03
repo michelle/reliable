@@ -808,7 +808,7 @@ Reliable.prototype._handleMessage = function(msg) {
       if (!!data && data.ack[2] === msg[2]) {
         this._complete(id);
         this._received[id] = true;
-      } else {
+      } else if (!!data) {
         this._ack(id, data.ack);
       }
       break;
