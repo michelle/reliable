@@ -714,7 +714,7 @@ Reliable.prototype._setupInterval = function() {
   this._timeout = setInterval(function() {
     // FIXME: String stuff...
     var msg = self._queue.shift();
-    console.log('Sending...', msg);
+    util.log('Sending...', msg);
     msg = util.pack(msg);
     util.blobToBinaryString(msg, function(str) {
       self._dc.send(str);
@@ -729,10 +729,8 @@ Reliable.prototype._setupInterval = function() {
 
 // Go through ACKs to send missing pieces.
 Reliable.prototype._processAcks = function() {
-  util.log('processAcks');
   for (var id in this._outgoing) {
     if (this._outgoing.hasOwnProperty(id)) {
-      console.log(this._outgoing[id].ack)
       this._sendWindowedChunks(id);
     }
   }
@@ -862,7 +860,9 @@ Reliable.prototype._chunk = function(bl) {
 // Sends ACK N, expecting Nth blob chunk for message ID.
 Reliable.prototype._ack = function(id, n) {
   var ack = this._incoming[id].ack;
-  this._handleSend(ack);
+  if (this._queue.indexOf(ack) === -1) {
+    this._handleSend(ack);
+  }
 };
 
 // Sends END.
