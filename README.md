@@ -1,4 +1,4 @@
-# THE AWESOME PLAN TO BRING RELIABLE TRANSFER TO PEERJS WITH SOME UTILS.
+# Reliable transfer over DataChannels
 
 
 ## Reliable
@@ -8,7 +8,7 @@
 * `.onmessage(msg)`: Called when data is received.
 
 
-## Message format
+## Internal message format
 
 ### ACK
 
@@ -59,3 +59,7 @@ This is a message that was able to be sent without being chunked.
   /* msg */   payload
 ]
 ```
+
+## Future plans
+
+Use stream API.
