@@ -7,6 +7,23 @@
 * `.send(msg)`: Takes any message and sends it reliably.
 * `.onmessage(msg)`: Called when data is received.
 
+`Reliable.higherBandwidthSDP(sdp)`: This need to be applied to all offer/answer SDPs for Reliable to function properly. Returns the new SDP with added bandwidth. See usage below.
+
+```js
+// Assuming 2 PeerConnections pc1, pc2.
+pc1.createOffer(function(offer) {
+  offer.sdp = Reliable.higherBandwidthSDP(offer.sdp);
+  pc1.setLocalDescription(offer, ...);
+});
+
+...
+
+// Same process for answer.
+pc2.createAnswer(function(answer) {
+  answer.sdp = Reliable.higherBandwidthSDP(answer.sdp);
+  pc2.setLocalDescription(answer, ...);
+});
+```
 
 ## Internal message format
 
