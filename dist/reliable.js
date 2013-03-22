@@ -845,7 +845,7 @@ Reliable.prototype._handleMessage = function(msg) {
 
       var n = msg[2];
       var chunk = msg[3];
-      data.chunks[n] = chunk;
+      data.chunks[n] = new Uint8Array(chunk);
 
       // If we get the chunk we're looking for, ACK for next missing.
       // Otherwise, ACK the same N again.
@@ -941,6 +941,16 @@ Reliable.prototype._complete = function(id) {
     self.onmessage(util.unpack(ab));
   });
   delete this._incoming[id];
+};
+
+// Ups bandwidth limit on SDP. Meant to be called during offer/answer.
+Reliable.higherBandwidthSDP = function(sdp) {
+  // AS stands for Application-Specific Maximum.
+  // Bandwidth number is in kilobits / sec.
+  // See RFC for more info: http://www.ietf.org/rfc/rfc2327.txt
+  var parts = sdp.split('b=AS:30');
+  var replace = 'b=AS:102400'; // 100 Mbps
+  return parts[0] + replace + parts[1];
 };
 
 exports.Reliable = Reliable;
