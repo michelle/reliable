@@ -705,9 +705,6 @@ Reliable.prototype.send = function(msg) {
   this._count += 1;
 };
 
-// Overwritten, typically.
-Reliable.prototype.onmessage = function(msg) {};
-
 // Set up interval for processing queue.
 Reliable.prototype._setupInterval = function() {
   var self = this;
@@ -798,7 +795,11 @@ Reliable.prototype._handleMessage = function(msg) {
       var message = id;
       if (!!message) {
         // TODO: What fancy timeout stuff to do with ACK?
-        this.onmessage(util.unpack(message));
+        var event = document.createEvent("Event");
+            event.initEvent('message',true,true);
+            event.data = util.unpack(message)
+
+        this.dispatchEvent(event);
       }
       break;
     // Reached the end of the message.
@@ -941,10 +942,63 @@ Reliable.prototype._complete = function(id) {
   var chunks = this._incoming[id].chunks;
   var bl = new Blob(chunks);
   util.blobToArrayBuffer(bl, function(ab) {
-    util.log('Calling onmessage with complete message');
-    self.onmessage(util.unpack(ab));
+    util.log('Dispatch message event with complete message');
+
+    var event = document.createEvent("Event");
+        event.initEvent('message',true,true);
+        event.data = util.unpack(ab)
+
+    self.dispatchEvent(event);
   });
   delete this._incoming[id];
+};
+
+
+// wrapper for message event based on code from EventTarget.js
+Reliable.prototype._listeners = {};
+
+Reliable.prototype.addEventListener = function(type, listener, useCapture)
+{
+  if(type == 'message')
+  {
+    if(this._listeners[type] === undefined)
+       this._listeners[type] = [];
+  
+    if(this._listeners[type].indexOf(listener) === -1)
+      this._listeners[type].push(listener);
+  }
+  else
+    this._dc.addEventListener(type, listener, useCapture)
+}
+
+Reliable.prototype.dispatchEvent = function(event)
+{
+  if(type == 'message')
+  {
+    var listenerArray = this._listeners[event.type] || [];
+  
+    var dummyListener = this['on' + event.type];
+    if(typeof dummyListener == 'function')
+      listenerArray = listenerArray.concat(dummyListener);
+
+    for(var i=0, l=listenerArray.length; i<l; i++)
+      listenerArray[i].call(this, event);
+  }
+  else
+    this._dc.dispatchEvent(event)
+};
+
+Reliable.prototype.removeEventListener = function(type, listener)
+{
+  if(type == 'message')
+  {
+    var index = this._listeners[type].indexOf(listener);
+  
+    if(index !== -1)
+      this._listeners[type].splice(index, 1);
+  }
+  else
+    this._dc.removeEventListener(type, listener)
 };
 
 // Ups bandwidth limit on SDP. Meant to be called during offer/answer.
