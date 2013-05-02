@@ -1001,6 +1001,13 @@ Reliable.prototype.removeEventListener = function(type, listener)
     this._dc.removeEventListener(type, listener)
 };
 
+
+Reliable.prototype.__defineGetter__("readyState", function()
+{
+  return this._dc.readyState;
+});
+
+
 // Ups bandwidth limit on SDP. Meant to be called during offer/answer.
 Reliable.higherBandwidthSDP = function(sdp) {
   // AS stands for Application-Specific Maximum.
