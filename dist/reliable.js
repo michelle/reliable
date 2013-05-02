@@ -685,7 +685,7 @@ function Reliable(dc, debug) {
 // Send a message reliably.
 Reliable.prototype.send = function(msg) {
   // Determine if chunking is necessary.
-  var bl = util.pack(msg);
+  var bl = util.pack(msg, true);
   if (bl.size < this._mtu) {
     this._handleSend(['no', bl]);
     return;
@@ -724,7 +724,7 @@ Reliable.prototype._setupInterval = function() {
 Reliable.prototype._intervalSend = function(msg) {
   var self = this;
   util.log('Sending...', msg);
-  msg = util.pack(msg);
+  msg = util.pack(msg, true);
   util.blobToBinaryString(msg, function(str) {
     self._dc.send(str);
   });
