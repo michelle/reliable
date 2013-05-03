@@ -799,11 +799,14 @@ Reliable.prototype._handleMessage = function(msg) {
     // Reached the end of the message.
     case 'end':
       data = idata;
+
+      // In case end comes first.
+      this._received[id] = msg[2];
+
       if (!data) {
         break;
       }
 
-      data.end = msg[2];
       this._ack(id);
       break;
     case 'ack':
@@ -828,7 +831,8 @@ Reliable.prototype._handleMessage = function(msg) {
       // Create a new entry if none exists.
       data = idata;
       if (!data) {
-        if (this._received[id] !== undefined) {
+        var end = this._received[id];
+        if (end === true) {
           break;
         }
         data = {
@@ -880,7 +884,7 @@ Reliable.prototype._ack = function(id) {
   var ack = this._incoming[id].ack;
 
   // if ack is the end value, then call _complete.
-  if (this._incoming[id].end === ack[2]) {
+  if (this._received[id] === ack[2]) {
     this._complete(id);
     this._received[id] = true;
   }
