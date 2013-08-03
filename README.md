@@ -31,7 +31,7 @@ pc2.createAnswer(function(answer) {
 
 This is an ACK for a chunk of the message.
 
-```
+```js
 [
   /* type */  'ack',
   /* id */    message_id,
@@ -43,7 +43,7 @@ This is an ACK for a chunk of the message.
 
 This is a chunk of the message.
 
-```
+```js
 [
   /* type */  'chunk',
   /* id */    message_id,
@@ -57,7 +57,7 @@ This is a chunk of the message.
 
 This is the end of a message.
 
-```
+```js
 [
   /* type */  'end',
   /* id */    message_id,
@@ -70,7 +70,7 @@ This is the end of a message.
 
 This is a message that was able to be sent without being chunked.
 
-```
+```js
 [
   /* type */  'no',
   /* msg */   payload
