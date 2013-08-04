@@ -685,7 +685,7 @@ function Reliable(dc, debug) {
 // Send a message reliably.
 Reliable.prototype.send = function(msg) {
   // Determine if chunking is necessary.
-  var bl = util.pack(msg);
+  var bl = util.pack(msg, true);
   if (bl.size < this._mtu) {
     this._handleSend(['no', bl]);
     return;
@@ -725,7 +725,7 @@ Reliable.prototype._setupInterval = function() {
 
 Reliable.prototype._intervalSend = function(msg) {
   var self = this;
-  msg = util.pack(msg);
+  msg = util.pack(msg, true);
   util.blobToBinaryString(msg, function(str) {
     self._dc.send(str);
   });
@@ -793,7 +793,12 @@ Reliable.prototype._handleMessage = function(msg) {
     case 'no':
       var message = id;
       if (!!message) {
-        this.onmessage(util.unpack(message));
+        // TODO: What fancy timeout stuff to do with ACK?
+        var event = document.createEvent("Event");
+            event.initEvent('message',true,true);
+            event.data = util.unpack(message)
+
+        this.dispatchEvent(event);
       }
       break;
     // Reached the end of the message.
@@ -933,10 +938,69 @@ Reliable.prototype._complete = function(id) {
   var chunks = this._incoming[id].chunks;
   var bl = new Blob(chunks);
   util.blobToArrayBuffer(bl, function(ab) {
-    self.onmessage(util.unpack(ab));
+    var event = document.createEvent("Event");
+        event.initEvent('message',true,true);
+        event.data = util.unpack(ab)
+
+    self.dispatchEvent(event);
   });
   delete this._incoming[id];
 };
+
+
+// wrapper for message event based on code from EventTarget.js
+Reliable.prototype._listeners = {};
+
+Reliable.prototype.addEventListener = function(type, listener, useCapture)
+{
+  if(type == 'message')
+  {
+    if(this._listeners[type] === undefined)
+       this._listeners[type] = [];
+  
+    if(this._listeners[type].indexOf(listener) === -1)
+      this._listeners[type].push(listener);
+  }
+  else
+    this._dc.addEventListener(type, listener, useCapture)
+}
+
+Reliable.prototype.dispatchEvent = function(event)
+{
+  if(type == 'message')
+  {
+    var listenerArray = this._listeners[event.type] || [];
+  
+    var dummyListener = this['on' + event.type];
+    if(typeof dummyListener == 'function')
+      listenerArray = listenerArray.concat(dummyListener);
+
+    for(var i=0, l=listenerArray.length; i<l; i++)
+      listenerArray[i].call(this, event);
+  }
+  else
+    this._dc.dispatchEvent(event)
+};
+
+Reliable.prototype.removeEventListener = function(type, listener)
+{
+  if(type == 'message')
+  {
+    var index = this._listeners[type].indexOf(listener);
+  
+    if(index !== -1)
+      this._listeners[type].splice(index, 1);
+  }
+  else
+    this._dc.removeEventListener(type, listener)
+};
+
+
+Reliable.prototype.__defineGetter__("readyState", function()
+{
+  return this._dc.readyState;
+});
+
 
 // Ups bandwidth limit on SDP. Meant to be called during offer/answer.
 Reliable.higherBandwidthSDP = function(sdp) {
@@ -945,8 +1009,37 @@ Reliable.higherBandwidthSDP = function(sdp) {
   // See RFC for more info: http://www.ietf.org/rfc/rfc2327.txt
   var parts = sdp.split('b=AS:30');
   var replace = 'b=AS:102400'; // 100 Mbps
-  return parts[0] + replace + parts[1];
+  if (parts.length > 1) {
+    return parts[0] + replace + parts[1];
+  }
+  return sdp;
 };
+
+Reliable.prototype.addEventListener = function(type, listener)
+{
+  var self = this;
+
+  this._listeners = {};
+
+  var wrapper = this._listeners[listener] = function(event)
+  {
+    listener.call(self, event)
+  };
+
+  this._dc.addEventListener(type, wrapper)
+}
+
+Reliable.prototype.dispatchEvent = function(event)
+{
+  this._dc.dispatchEvent(event)
+}
+
+Reliable.prototype.removeEventListener = function(type, listener)
+{
+  var wrapper = this._listeners[listener];
+
+  this._dc.removeEventListener(type, wrapper)
+}
 
 // Overwritten, typically.
 Reliable.prototype.onmessage = function(msg) {};
