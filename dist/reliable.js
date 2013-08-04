@@ -1017,7 +1017,16 @@ Reliable.higherBandwidthSDP = function(sdp) {
 
 Reliable.prototype.addEventListener = function(type, listener)
 {
-  this._dc.addEventListener(type, listener)
+  var self = this;
+
+  this._listeners = {};
+
+  var wrapper = this._listeners[listener] = function(event)
+  {
+    listener.call(self, event)
+  };
+
+  this._dc.addEventListener(type, wrapper)
 }
 
 Reliable.prototype.dispatchEvent = function(event)
@@ -1027,7 +1036,9 @@ Reliable.prototype.dispatchEvent = function(event)
 
 Reliable.prototype.removeEventListener = function(type, listener)
 {
-  this._dc.removeEventListener(type, listener)
+  var wrapper = this._listeners[listener];
+
+  this._dc.removeEventListener(type, wrapper)
 }
 
 // Overwritten, typically.
