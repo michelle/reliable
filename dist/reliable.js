@@ -943,9 +943,22 @@ Reliable.higherBandwidthSDP = function(sdp) {
   // AS stands for Application-Specific Maximum.
   // Bandwidth number is in kilobits / sec.
   // See RFC for more info: http://www.ietf.org/rfc/rfc2327.txt
-  var parts = sdp.split('b=AS:30');
-  var replace = 'b=AS:102400'; // 100 Mbps
-  return parts[0] + replace + parts[1];
+
+  // Chrome 31+ doesn't want us munging the SDP, so we'll let them have their
+  // way.
+  var version = navigator.appVersion.match(/Chrome\/(.*?) /);
+  if (version) {
+    version = parseInt(version[1].split('.').shift());
+    if (version < 31) {
+      var parts = sdp.split('b=AS:30');
+      var replace = 'b=AS:102400'; // 100 Mbps
+      if (parts.length > 1) {
+        return parts[0] + replace + parts[1];
+      }
+    }
+  }
+
+  return sdp;
 };
 
 // Overwritten, typically.
