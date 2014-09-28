@@ -1,3 +1,0 @@
-[submodule "deps/js-binarypack"]
-	path = deps/js-binarypack
-	url = git@github.com:peers/js-binarypack.git
